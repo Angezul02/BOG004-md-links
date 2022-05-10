@@ -2,129 +2,13 @@ const { fstat } = require("fs");
 const path = require("path");
 const fs = require("fs");
 const { error } = require("console");
-const https = require('https')
-
-// const [, , route] = process.argv;
-
-
-/* module.exports = (fileMdUrl, options = {validate: false}) => {
-  
-    let respuesta = {
-      data: [],
-      errors: ''
-    }
-  
-    const {validate} = options; // destructuring
-    
-    const links = new Promise((resolve, reject) => {
-      
-      try {
-        //Validar reuta absoluta o relativa
-        //Recursividad en caso de que la ruta apunte a un directorio
-        const contentMdFile = fs.readFileSync(fileMdUrl, {encoding: 'utf-8', flag: 'r'}).toString()
-        //Extraer los links
-        respuesta.data = getLinks(contentMdFile, fileMdUrl, validate)
-        //Crear el objeto respuesta
-      } catch (err) {
-          respuesta.errors += "Error en la lectura del archivo, comprueba que la ruta sea correcta o el nombre del archivo esté bien escrito"
-      }
-    
-      if (!respuesta.errors) {
-        resolve(respuesta.data)
-      } else {
-        reject(respuesta.errors)
-      }
-    })
-  
-    return links
-  }; // fin 
-  
-  function getLinks(contentMdFile = '', fileMdUrl = '', validate = false) {
-    const getLinksRegex = /!*\[(.+?)\]\((.+?)\)/gi
-    let getUrls = contentMdFile.match(getLinksRegex)
-    const respuesta = createObjectResponse(getUrls, fileMdUrl, validate)
-    return respuesta
-  }
-  
-  function createObjectResponse (urls, fileMdUrl, validate) {
-    // .map(), .foreach(), .filter(), .reduce()
-    const urlProcessed = urls.map((url) => {
-      
-      const splitUrl = url.split("](")
-      const text = splitUrl[0].slice(1)
-      const href = splitUrl[1].slice(0, -1)
-  
-      let objeto = {
-        href,
-        text,
-        file: fileMdUrl
-      }
-      if (validate) {
-        // Validar si la url esta rota
-        const getCheckUrl = checkUrl(href)
-        console.log("console del validate. return", getCheckUrl)
-        objeto.status =  getCheckUrl.status
-        objeto.ok = getCheckUrl.ok
-        //respuesta.errors = getCheckUrl.error
-      }
-  
-      return objeto
-    })
-  
-    return urlProcessed
-  }
-  
-  function checkUrl (url) {
-    let status = ''
-    let ok = ''
-    let error = ''
-    try {
-      https.get(url, (resp) => {
-        status = resp.statusCode
-        console.log("console log de status" ,status)
-        if(resp.statusCode >= 200 && resp.statusCode< 400){
-        ok = 'ok'
-          
-        } else {
-        ok = 'failed'
-          
-        }
-        console.log('dentro de get')
-  
-      {status=status, ok=ok} 
-      })
-    } catch (error) {
-      error = error.code;
-      ok = 'fail'
-      
-    }
-    return {
-      status, ok, error
-    }
-    
-  }
-  
-  // Ejemplo cómo se va a consumir la libreria
-  
-  const mdLinks = require ('./index.js')
-  
-  mdLinks("./README.md", {validate: true})
-  .then(links => console.log(links))
-  .catch(console.error) */
-// function validateUrl(url) {
-//   return new Promise((resolve, reject) => {
-//     https.get(url, res =>  resolve(res))
-//       .on('error', e => reject(false));
-//   });
-// }
-// 
+const https = require("https");
 
 function validateUrl(url) {
-    return new Promise((resolve, reject) => {
-      https.get(url, res =>  resolve(res))
-        .on('error', e => reject(false));
-    });
-  }
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => resolve(res)).on("error", (e) => reject(false));
+  });
+}
 
 function validatePath(pathUser) {
   if (path.isAbsolute(pathUser)) {
@@ -135,14 +19,11 @@ function validatePath(pathUser) {
   }
 }
 
-// let resultValidatePath = validatePath(route);
-// console.log("Resultado del las rutas", resultValidatePath);
-
-// (pendiente)realizar la const los datos transformados al ejecutar la funcion validatePath
 // Función aplicando recursividad para hacer recorrido de directorios y push de archivos .md
 
 function documentsRoute(pathUser) {
-    const separator = process.platform === "win32" || process.platform === "win64" ? "\\" : "/";
+  const separator =
+    process.platform === "win32" || process.platform === "win64" ? "\\" : "/";
   let filesPath = [];
   if (fs.statSync(pathUser).isFile() && path.extname(pathUser) === ".md") {
     filesPath.push(pathUser);
@@ -159,10 +40,6 @@ function documentsRoute(pathUser) {
   }
   return filesPath;
 }
-
-// let resultDocumentsRoute = documentsRoute(resultValidatePath);
-
-// console.log(" Esto funciona : ", resultDocumentsRoute);
 
 // esta función lee los archivos md, busca links en cada archivo y guarda los links
 
@@ -183,46 +60,99 @@ const readDocument = (file) => {
     });
   });
 };
-const getObjet = (mdArray)=>
-Promise.all(mdArray.map(readDocument))
-.then((data) => {
-    const expRegLinks = /!*\[(.+?)\]\((.+?)\)/gi;
-    data.forEach((item) => {
-      const linksAll = [...item.fileContent.toString().match(expRegLinks)];
-      linksAll.forEach((elem) => {
-        urlsOnly.push(elem);
-        pathOnly.push(item.route);
+const getObjet = (mdArray) =>
+  Promise.all(mdArray.map(readDocument))
+    .then((data) => {
+      const expRegLinks = /!*\[(.+?)\]\((.+?)\)/gi;
+      data.forEach((item) => {
+        const linksAll = [...item.fileContent.toString().match(expRegLinks)];
+        linksAll.forEach((elem) => {
+          urlsOnly.push(elem);
+          pathOnly.push(item.route);
+        });
       });
-    });
-    objets = urlsOnly.map((links) => {
-      let index = urlsOnly.indexOf(links);
-      const splitUrl = links.split("](");
-      const text = splitUrl[0].slice(1);
-      const href = splitUrl[1].slice(0, -1);
-      return {
-        href,
-        text: text.substring(0, 50),
-        file: pathOnly[index],
-      };
-    });
+      objets = urlsOnly.map((links) => {
+        let index = urlsOnly.indexOf(links);
+        const splitUrl = links.split("](");
+        const text = splitUrl[0].slice(1);
+        const href = splitUrl[1].slice(0, -1);
+        return {
+          href,
+          text: text.substring(0, 50),
+          file: pathOnly[index],
+        };
+      });
       return objets;
+    })
+    .catch((error) =>
+      console.log("Debe ingresar la ruta de un archivo o carpeta", error)
+    );
 
-  })
-  .catch(error => reject(error));
+function stats(linksArray) {
+  let validateLinks = 0;
+  let invalidateLinks = 0;
 
-//   getObjet.then(response => {
-//     console.log("HOLAAA SOY UN OBJETO",objets)
-//   })
+  let unique = new set(linksArray.map((link) => link.href === link.file));
+}
 
-//  getObjet(resultDocumentsRoute)
-//  .then(res=>{
-//     console.log("esto es getObjet", res);
-//  })
-  
-  module.exports = {
-    validatePath,
-    documentsRoute,
-    validateUrl,
-    getObjet,  
+function CreateObjectWithvalidateUrl(data, optionsUser) {
+  let urlValidatedList = data.map((object) =>
+    validateUrl(object.href)
+      .then((res) => {
+        object.status = res.statusCode;
+        object.ok =
+          res.statusCode >= 200 && res.statusCode <= 399 ? "ok" : "fail";
+      })
+      .catch((error) => {
+        object.status = error.code;
+        object.ok = "fail";
+      })
+  );
+  Promise.all(urlValidatedList).then(() => {
+    // Para mostrar la tabla con broken se debe esperar a que termine la validacion con .then
+    if (optionsUser.stats === "--s" || optionsUser.stats === "--stats") {
+      const filterDataWithHref = getTotalLinks(data);
+      const filterDataWithStatus = data.filter(
+        (object) => object.ok === "fail"
+      );
+      const unique = getUnique(data);
 
-  }
+      result = {
+        Total: filterDataWithHref.length,
+        Unique: unique.length,
+        Broken: filterDataWithStatus.length,
+      };
+      console.table(result);
+    } else {
+      console.log("Links desde promesa: ", data); //pinta aqui
+    }
+  });
+}
+
+function objectfitStat(data) {
+  const filterDataWithHref = getTotalLinks(data);
+  const unique = getUnique(data);
+
+  result = {
+    Total: filterDataWithHref.length,
+    Unique: unique.length,
+  };
+  console.table(result);
+}
+
+function getUnique(data) {
+  return [...new Set(data.map((object) => object.href))];
+}
+
+function getTotalLinks(data) {
+  return data.filter((object) => object.hasOwnProperty("href"));
+}
+
+module.exports = {
+  validatePath,
+  documentsRoute,
+  validateUrl,
+  getObjet,
+  CreateObjectWithvalidateUrl,
+  objectfitStat,
+};
