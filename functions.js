@@ -3,15 +3,13 @@ const path = require("path");
 const fs = require("fs");
 const { error } = require("console");
 const https = require("https");
-
-function validateUrl(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, (res) => resolve(res)).on("error", (e) => reject(false));
-  });
-}
+var colors = require("colors");
 
 function validatePath(pathUser) {
-  if (path.isAbsolute(pathUser)) {
+  if (!fs.existsSync(pathUser)) {
+    console.log("☹ ✾ La ruta ingresada no es valida o no existe ✾ ☹".magenta);
+    process.exit();
+  } else if (path.isAbsolute(pathUser)) {
     return pathUser;
   } else {
     const pathAbsolute = path.resolve(pathUser).normalize();
@@ -37,6 +35,10 @@ function documentsRoute(pathUser) {
         });
       });
     }
+  }
+  if (filesPath.length === 0) {
+    console.log("No se encontraron archivos markdown".magenta);
+    process.exit();
   }
   return filesPath;
 }
@@ -65,11 +67,13 @@ const getObjet = (mdArray) =>
     .then((data) => {
       const expRegLinks = /!*\[(.+?)\]\((.+?)\)/gi;
       data.forEach((item) => {
-        const linksAll = [...item.fileContent.toString().match(expRegLinks)];
-        linksAll.forEach((elem) => {
-          urlsOnly.push(elem);
-          pathOnly.push(item.route);
-        });
+        const linksAll = item.fileContent.toString().match(expRegLinks);
+        if (linksAll) {
+          linksAll.forEach((elem) => {
+            urlsOnly.push(elem);
+            pathOnly.push(item.route);
+          });
+        }
       });
       objets = urlsOnly.map((links) => {
         let index = urlsOnly.indexOf(links);
@@ -82,17 +86,20 @@ const getObjet = (mdArray) =>
           file: pathOnly[index],
         };
       });
+
       return objets;
     })
     .catch((error) =>
-      console.log("Debe ingresar la ruta de un archivo o carpeta", error)
+      console.log(
+        "No se encuentran links en el archivo o directorio ingresado".magenta,
+        error
+      )
     );
 
-function stats(linksArray) {
-  let validateLinks = 0;
-  let invalidateLinks = 0;
-
-  let unique = new set(linksArray.map((link) => link.href === link.file));
+function validateUrl(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => resolve(res)).on("error", (e) => reject(false));
+  });
 }
 
 function CreateObjectWithvalidateUrl(data, optionsUser) {
@@ -124,7 +131,7 @@ function CreateObjectWithvalidateUrl(data, optionsUser) {
       };
       console.table(result);
     } else {
-      console.log("Links desde promesa: ", data); //pinta aqui
+      console.log(colors.cyan("Estos son los enlaces validados: ", data));
     }
   });
 }
