@@ -27,7 +27,7 @@ function documentsRoute(pathUser) {
     filesPath.push(pathUser);
   } else {
     if (fs.statSync(pathUser).isDirectory()) {
-      const directory = pathUser;
+      let directory = pathUser;
       let contentDirectory = fs.readdirSync(directory);
       contentDirectory.forEach((elem) => {
         documentsRoute(pathUser + separator + elem).forEach((elem) => {
@@ -40,14 +40,11 @@ function documentsRoute(pathUser) {
     console.log("No se encontraron archivos markdown".magenta);
     process.exit();
   }
+
   return filesPath;
 }
 
 // esta función lee los archivos md, busca links en cada archivo y guarda los links
-
-let urlsOnly = [];
-let pathOnly = [];
-let objets = [];
 
 const readDocument = (file) => {
   return new Promise((resolve, reject) => {
@@ -62,12 +59,16 @@ const readDocument = (file) => {
     });
   });
 };
-const getObjet = (mdArray) =>
-  Promise.all(mdArray.map(readDocument))
+const getObjet = (mdArray) => {
+  let urlsOnly = [];
+  let pathOnly = [];
+  let objets = [];
+  return Promise.all(mdArray.map(readDocument))
     .then((data) => {
       const expRegLinks = /!*\[(.+?)\]\((.+?)\)/gi;
       data.forEach((item) => {
-        const linksAll = item.fileContent.toString().match(expRegLinks);
+        const linksAll = item.fileContent.match(expRegLinks);
+
         if (linksAll) {
           linksAll.forEach((elem) => {
             urlsOnly.push(elem);
@@ -89,12 +90,8 @@ const getObjet = (mdArray) =>
 
       return objets;
     })
-    .catch((error) =>
-      console.log(
-        "No se encuentran links en el archivo o directorio ingresado".magenta,
-        error
-      )
-    );
+    .catch((error) => console.error(error));
+};
 
 function validateUrl(url) {
   return new Promise((resolve, reject) => {
@@ -115,9 +112,9 @@ function CreateObjectWithvalidateUrl(data, optionsUser) {
         object.ok = "fail";
       })
   );
-  Promise.all(urlValidatedList).then(() => {
+  return Promise.all(urlValidatedList).then(() => {
     // Para mostrar la tabla con broken se debe esperar a que termine la validacion con .then
-    if (optionsUser.stats === "--s" || optionsUser.stats === "--stats") {
+    if (optionsUser.stats) {
       const filterDataWithHref = getTotalLinks(data);
       const filterDataWithStatus = data.filter(
         (object) => object.ok === "fail"
@@ -129,9 +126,11 @@ function CreateObjectWithvalidateUrl(data, optionsUser) {
         Unique: unique.length,
         Broken: filterDataWithStatus.length,
       };
-      console.table(result);
+      // console.table(result);
+      return result;
     } else {
-      console.log(colors.cyan("Estos son los enlaces validados: ", data));
+      // (colors.cyan("Estos son los enlaces validados: ",
+      return data;
     }
   });
 }
@@ -144,7 +143,7 @@ function objectfitStat(data) {
     Total: filterDataWithHref.length,
     Unique: unique.length,
   };
-  console.table(result);
+  return result;
 }
 
 function getUnique(data) {

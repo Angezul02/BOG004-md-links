@@ -9,37 +9,34 @@ const {
 // const userPath = process.argv[2];
 // const userValidate = process.argv[3];
 // const optionsUser = process.argv;
-
 let response = {
   data: [], // array de objetos href, text, etc
   errors: "",
 };
 
-function mdLinks(path = "", optionsUser = { validate: false, stats: "" }) {
+function mdLinks(path = "", optionsUser = { validate: false, stats: false }) {
   // const { validate, stats } = options;
 
   return new Promise((resolve, reject) => {
     const validateRoute = validatePath(path);
     const resultDocumentsRoute = documentsRoute(validateRoute);
     getObjet(resultDocumentsRoute) // intentar dejaar solo la función mdlinks
-      .then((resolve) => {
-        response.data = resolve;
+      .then((res) => {
+        response.data = res;
       })
       .then(() => {
-        if (
-          optionsUser?.validate === "--validate" ||
-          optionsUser?.validate === "--v"
-        ) {
-          CreateObjectWithvalidateUrl(response.data, optionsUser);
-        } else if (
-          (optionsUser?.validate !== "--validate" ||
-            optionsUser?.validate !== "--v") &&
-          (optionsUser?.stats === "--stats" || optionsUser?.stats === "--s")
-        ) {
-          objectfitStat(response.data);
+        if (optionsUser.validate) {
+          // CreateObjectWithvalidateUrl(response.data, optionsUser);
+          resolve(
+            CreateObjectWithvalidateUrl(response.data, optionsUser).then(
+              (data) => data
+            )
+          );
+        } else if (optionsUser.stats) {
+          resolve(objectfitStat(response.data));
         } else {
           if (!response.errors) {
-            console.log(response.data);
+            // console.log(response.data);
             resolve(response.data);
           } else {
             reject(response.errors);

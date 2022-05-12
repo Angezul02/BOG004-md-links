@@ -1,84 +1,4 @@
-// const mdLinks = require('../');
-
-// describe('mdLinks', () => {
-
-//   it('should...', () => {
-//     console.log('FIX ME!');
-//   });
-
-// });
-const validatePath = require("../functions").validatePath;
-const documentsRoute = require("../functions").documentsRoute;
-const getObjet = require("../functions").getObjet;
-const mdLinks = require("../index").mdLinks;
-
-describe("validacion del path", () => {
-  it("es una función", () => {
-    expect(typeof validatePath).toBe("function");
-  });
-
-  it("recibe una ruta relativa y la convierte a absoluta", () => {
-    let userPathTest = "documents";
-    let result =
-      "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents";
-    return expect(validatePath(userPathTest)).toEqual(result);
-  });
-
-  it("recibe un archivo valida si es .md, si es un directorio lo recorre y encuentra archivos .md, si lo es, entonces lo almacena en un array", () => {
-    let userDirectoryTest = "documents";
-    let result = [
-      "documents\\prueba1.md",
-      "documents\\prueba2.md",
-      "documents\\prueba3.md",
-    ];
-    return expect(documentsRoute(userDirectoryTest)).toEqual(result);
-  });
-
-  it("valida los archivos .md, y encuentra links, los cuales almacena en un objeto", () => {
-    let arrayTest = ["documents\\prueba1.md"];
-    let objectExpect = [
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
-        text: "Array.prototype.forEach() - MDN",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/map",
-        text: "Array.prototype.map() - MDN",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/filter",
-        text: "Array.prototype.filter() - MDN",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce",
-        text: "Array.prototype.reduce() - MDN",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://www.omelet.com/error",
-        text: "este no funciona",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/Reduce",
-        text: "Array.prototype.reduce() - MDN",
-        file: "documents\\prueba1.md",
-      },
-      {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
-        text: "Array.prototype.forEach() - MDN",
-        file: "documents\\prueba1.md",
-      },
-    ];
-
-    return getObjet(arrayTest).then((arrayTest) => {
-      expect(arrayTest).toEqual(objectExpect);
-    });
-  });
-});
+const { mdLinks } = require("../index.js");
 
 describe("Función mdLinks", () => {
   it("es una función", () => {
@@ -86,17 +6,56 @@ describe("Función mdLinks", () => {
   });
 
   it("Al ejecutar la función mdLinks con option false, la función retorna solo el objeto con 3 keys: href, text, file ", () => {
-    let pathTest =
-      "'C:UsersLABORATORIADocumentsPROYECTOS LABORATORIABOG004-md-linksdocumentsprueba3.md'";
-    let objectExpect = [
+    let pathTestMd =
+      "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md";
+    let objectExpectMd = [
       {
-        href: "https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach",
-        text: "Array.prototype.forEach() - MDN",
+        href: "https://internetpasoapaso.com/simbolos/#especiales",
+        text: "Enlace prueba 3",
         file: "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md",
       },
     ];
-    return mdLinks(pathTest, { validate: false }).then((arrayObjects) => {
-      expect(arrayObjects).toStrictEqual(objectExpect);
+    return mdLinks(pathTestMd).then((arrayObjects) => {
+      expect(arrayObjects).toEqual(objectExpectMd);
     });
+  });
+
+  it("Al ejecutar la función mdLinks con option true, la función retorna solo el objeto con 5 keys: href, text, file, status, ok ", () => {
+    let pathTestValidate =
+      "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md";
+    let objectExpectValidate = [
+      {
+        file: "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md",
+        href: "https://internetpasoapaso.com/simbolos/#especiales",
+        ok: "ok",
+        status: 200,
+        text: "Enlace prueba 3",
+      },
+    ];
+    return mdLinks(pathTestValidate, { validate: true }).then(
+      (arrayObjects) => {
+        expect(arrayObjects).toEqual(objectExpectValidate);
+      }
+    );
+  });
+  it("Al ejecutar la función mdLinks con path y option --s retorna un objeto con total y Unique", () => {
+    let pathTestValidate =
+      "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md";
+    let objectExpectValidate = { Total: 1, Unique: 1 };
+
+    return mdLinks(pathTestValidate, { stats: true }).then((arrayObjects) => {
+      expect(arrayObjects).toEqual(objectExpectValidate);
+    });
+  });
+  it("Al ejecutar la función mdLinks con path y option --v --s retorna un objeto con Total, Unique y Broken", () => {
+    let pathTestValidate =
+      "C:\\Users\\LABORATORIA\\Documents\\PROYECTOS LABORATORIA\\BOG004-md-links\\documents\\prueba3.md";
+    let objectExpectValidate = { Broken: 0, Total: 1, Unique: 1 };
+
+    return mdLinks(pathTestValidate, { validate: true, stats: true }).then(
+      (arrayObjects) => {
+        expect(arrayObjects).toEqual(objectExpectValidate);
+      }
+    );
   });
 });
