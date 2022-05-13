@@ -1,8 +1,9 @@
 {
-  "name": "bog004-md-links",
+  "name": "md-links-angezul22",
   "version": "1.0.0",
   "description": "Libreria para validación de links contenidos en archivos markdown",
   "main": "cli.js",
+  "browser": "cli.js",
   "directories": {
     "test": "test"
   },
